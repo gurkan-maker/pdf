@@ -1,0 +1,23 @@
+# VASTAS Professional CFD Report Generator Requirements
+# Core web framework
+streamlit>=1.28.0
+
+# PDF generation
+fpdf2>=2.7.6
+
+# Image processing
+Pillow>=10.0.0
+
+# Standard library dependencies (usually included with Python)
+# datetime - built-in
+# os - built-in
+# tempfile - built-in
+# uuid - built-in
+# base64 - built-in
+# io - built-in
+
+# Optional: For enhanced functionality (uncomment if needed)
+# matplotlib>=3.7.0  # For generating plots programmatically
+# numpy>=1.24.0      # For numerical computations
+# pandas>=2.0.0      # For data manipulation
+# plotly>=5.15.0     # For interactive plots
