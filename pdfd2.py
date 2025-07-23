@@ -7,6 +7,8 @@ import datetime
 import os
 import tempfile
 import uuid
+import requests
+from io import BytesIO
 
 # Configure page
 st.set_page_config(
@@ -15,126 +17,185 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Enhanced professional styling
+# Enhanced professional styling with Google Fonts
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Roboto+Mono:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Roboto', sans-serif;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Lato', sans-serif;
+        font-weight: 700;
+    }
+    
+    code, pre, .formula-display {
+        font-family: 'Roboto Mono', monospace !important;
+    }
+    
     .main-header {
-        color: #1B4F72;
+        color: #0A2463;
         text-align: center;
         font-size: 2.5rem;
-        font-weight: bold;
+        font-weight: 900;
         margin-bottom: 2rem;
         padding: 1.5rem;
-        background: linear-gradient(90deg, #EBF5FB, #D6EAF8);
-        border-radius: 10px;
-        border-left: 5px solid #2874A6;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        background: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+        border-radius: 12px;
+        border-left: 6px solid #3E92CC;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        font-family: 'Lato', sans-serif;
     }
+    
     .section-header {
-        color: #2E86C1;
-        border-bottom: 2px solid #3498DB;
-        padding-bottom: 10px;
-        margin-top: 2rem;
-        font-weight: bold;
+        color: #3E92CC;
+        border-bottom: 2px solid #3E92CC;
+        padding-bottom: 12px;
+        margin-top: 2.5rem;
+        font-weight: 700;
         font-size: 1.8rem;
+        font-family: 'Lato', sans-serif;
     }
+    
     .info-box {
-        background-color: #EBF5FB;
-        padding: 20px;
+        background-color: #F8F9FA;
+        padding: 22px;
         border-radius: 10px;
-        margin-bottom: 25px;
-        border-left: 5px solid #3498DB;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 28px;
+        border-left: 5px solid #3E92CC;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.06);
+        border-top: 1px solid #E9ECEF;
     }
+    
     .warning-box {
-        background-color: #FDF2E9;
-        padding: 20px;
+        background-color: #FFF9F0;
+        padding: 22px;
         border-radius: 10px;
-        margin-bottom: 25px;
-        border-left: 5px solid #F39C12;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 28px;
+        border-left: 5px solid #FFA630;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.06);
     }
+    
     .stButton>button {
-        background: linear-gradient(180deg, #2874A6, #1B4F72) !important;
+        background: linear-gradient(135deg, #3E92CC, #2A628F) !important;
         color: white !important;
-        font-weight: bold !important;
-        padding: 12px 28px !important;
-        border-radius: 8px !important;
-        transition: all 0.3s;
+        font-weight: 600 !important;
+        padding: 14px 32px !important;
+        border-radius: 10px !important;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         width: 100%;
         font-size: 1.1rem;
         border: none !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(62, 146, 204, 0.2);
+        font-family: 'Lato', sans-serif;
     }
+    
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 16px rgba(62, 146, 204, 0.25);
     }
+    
     .formula-display {
-        background-color: #F7F9F9;
-        padding: 20px;
-        border-radius: 8px;
-        font-family: "Courier New", monospace;
-        border: 1px solid #D6DBDF;
-        margin: 15px 0;
+        background-color: #F8F9FA;
+        padding: 22px;
+        border-radius: 10px;
+        font-family: 'Roboto Mono', monospace !important;
+        border: 1px solid #E9ECEF;
+        margin: 18px 0;
         box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         font-size: 1.1rem;
+        line-height: 1.6;
     }
+    
     .image-preview {
-        border: 2px solid #D6DBDF;
-        border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
-        background-color: #FAFAFA;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 2px solid #E9ECEF;
+        border-radius: 10px;
+        padding: 18px;
+        margin: 18px 0;
+        background-color: #F8F9FA;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.06);
     }
+    
     .metrics-container {
         display: flex;
         justify-content: space-around;
-        margin: 25px 0;
-        gap: 15px;
+        margin: 28px 0;
+        gap: 18px;
     }
+    
     .metric-box {
-        background: linear-gradient(180deg, #F8F9FA, #EBEDEF);
-        padding: 20px;
-        border-radius: 10px;
+        background: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+        padding: 22px;
+        border-radius: 12px;
         text-align: center;
         border: 1px solid #E9ECEF;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.06);
         flex: 1;
+        transition: all 0.3s ease;
     }
+    
+    .metric-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    
     .metric-box h4 {
-        color: #2E86C1;
-        margin-bottom: 10px;
-        font-size: 1.1rem;
+        color: #3E92CC;
+        margin-bottom: 12px;
+        font-size: 1.2rem;
+        font-weight: 700;
     }
+    
     .sidebar-section {
-        background: linear-gradient(180deg, #F8F9FA, #EBEDEF);
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 25px;
-        border-left: 4px solid #3498DB;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: linear-gradient(135deg, #F8F9FA, #E9ECEF);
+        padding: 22px;
+        border-radius: 12px;
+        margin-bottom: 28px;
+        border-left: 5px solid #3E92CC;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.06);
     }
+    
     .tab-content {
-        padding: 20px;
-        border-radius: 10px;
+        padding: 24px;
+        border-radius: 12px;
         background-color: white;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        margin-bottom: 25px;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+        margin-bottom: 28px;
         border: 1px solid #E9ECEF;
     }
+    
     .section-divider {
         height: 2px;
-        background: linear-gradient(90deg, #3498DB, transparent);
-        margin: 30px 0;
+        background: linear-gradient(90deg, #3E92CC, transparent);
+        margin: 32px 0;
         border: none;
     }
+    
     .stTextArea>div>div>textarea {
-        min-height: 150px !important;
+        min-height: 160px !important;
+        line-height: 1.6 !important;
     }
+    
     .stProgress>div>div>div>div {
-        background: linear-gradient(90deg, #3498DB, #2E86C1) !important;
+        background: linear-gradient(90deg, #3E92CC, #2A628F) !important;
+    }
+    
+    .section-toggle {
+        background-color: #F8F9FA;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        border-left: 4px solid #3E92CC;
+    }
+    
+    .report-summary {
+        background-color: #F8F9FA;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid #3E92CC;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.06);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -151,28 +212,46 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_creator("Professional CFD Analysis Tool")
         self.set_title("CFD Analysis Report")
         
+        # Add Lato and Roboto fonts
+        self.add_font('Lato', 'B', 'Lato-Bold.ttf', uni=True)
+        self.add_font('Lato', '', 'Lato-Regular.ttf', uni=True)
+        self.add_font('Roboto', '', 'Roboto-Regular.ttf', uni=True)
+        self.add_font('RobotoMono', '', 'RobotoMono-Regular.ttf', uni=True)
+        
     def header(self):
         # Company logo and header
         if self.company_logo and os.path.exists(self.company_logo):
             try:
-                self.image(self.company_logo, x=15, y=10, w=25)
-            except:
-                pass
+                img = Image.open(self.company_logo)
+                # Resize logo to maintain aspect ratio with max height of 25mm
+                img_width, img_height = img.size
+                aspect_ratio = img_width / img_height
+                new_height = 25  # 25mm height
+                new_width = new_height * aspect_ratio
+                
+                # Ensure width doesn't exceed 50mm
+                if new_width > 50:
+                    new_width = 50
+                    new_height = new_width / aspect_ratio
+                
+                self.image(self.company_logo, x=15, y=10, w=new_width)
+            except Exception as e:
+                print(f"Error loading logo: {e}")
         
-        self.set_font('Arial', 'B', 20)
-        self.set_text_color(27, 79, 114)  # Professional blue
+        self.set_font('Lato', 'B', 20)
+        self.set_text_color(10, 36, 99)  # Dark blue
         self.cell(0, 15, 'COMPUTATIONAL FLUID DYNAMICS', 0, 1, 'C')
         self.cell(0, 10, 'ANALYSIS REPORT', 0, 1, 'C')
         
-        # Add line
-        self.set_draw_color(52, 152, 219)
-        self.set_line_width(1)
+        # Add decorative line
+        self.set_draw_color(62, 146, 204)
+        self.set_line_width(0.8)
         self.line(15, 38, 195, 38)
         self.ln(12)
     
     def footer(self):
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
+        self.set_font('Roboto', 'I', 8)
         self.set_text_color(128, 128, 128)
         self.cell(0, 10, f'Page {self.page_no()} | CFD Analysis Report | Generated on {datetime.datetime.now().strftime("%Y-%m-%d")} | VASTAS Professional CFD Suite', 0, 0, 'C')
     
@@ -181,28 +260,29 @@ class ProfessionalPDFGenerator(FPDF):
         self.ln(35)
         
         # Add decorative element
-        self.set_fill_color(235, 245, 251)
-        self.rect(50, 40, 110, 110, style='FD')  # Both fill and draw
+        self.set_fill_color(248, 249, 250)
+        self.set_draw_color(220, 230, 240)
+        self.rect(50, 40, 110, 110, style='FD')
         
         # Main title
-        self.set_font('Arial', 'B', 24)
-        self.set_text_color(27, 79, 114)
+        self.set_font('Lato', 'B', 24)
+        self.set_text_color(10, 36, 99)
         self.cell(0, 15, report_data['title'], 0, 1, 'C')
         self.ln(25)
         
         # Report details box
-        self.set_fill_color(235, 245, 251)
-        self.set_draw_color(200, 220, 240)
+        self.set_fill_color(248, 249, 250)
+        self.set_draw_color(220, 230, 240)
         self.rect(30, self.get_y(), 150, 80, 'DF')
         self.set_line_width(0.3)
         
-        self.set_font('Arial', 'B', 16)
+        self.set_font('Lato', 'B', 16)
         self.set_text_color(0, 0, 0)
         self.ln(10)
         self.cell(0, 10, 'REPORT DETAILS', 0, 1, 'C')
         self.ln(5)
         
-        self.set_font('Arial', '', 12)
+        self.set_font('Roboto', '', 12)
         details = [
             f"Project: {report_data['project_name']}",
             f"Analyst: {report_data['analyst']}",
@@ -218,7 +298,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.ln(35)
         
         # Add confidentiality notice
-        self.set_font('Arial', 'I', 10)
+        self.set_font('Roboto', 'I', 10)
         self.set_text_color(128, 128, 128)
         self.multi_cell(0, 5, 
             "CONFIDENTIAL: This document contains proprietary information and is intended solely for the use of the intended recipient(s). "
@@ -229,16 +309,16 @@ class ProfessionalPDFGenerator(FPDF):
     def add_section_header(self, title, level=1):
         self.ln(12)
         if level == 1:
-            self.set_font('Arial', 'B', 16)
-            self.set_text_color(46, 134, 193)
+            self.set_font('Lato', 'B', 16)
+            self.set_text_color(62, 146, 204)
             # Add background for main section headers
-            self.set_fill_color(235, 245, 251)
+            self.set_fill_color(248, 249, 250)
             self.cell(0, 10, title, 0, 1, 'L', 1)
             # Add underline
-            self.set_draw_color(52, 152, 219)
+            self.set_draw_color(62, 146, 204)
             self.line(15, self.get_y(), 195, self.get_y())
         else:
-            self.set_font('Arial', 'B', 14)
+            self.set_font('Lato', 'B', 14)
             self.set_text_color(84, 153, 199)
             self.cell(0, 10, title, 0, 1)
         
@@ -246,7 +326,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_text_color(0, 0, 0)
     
     def add_section_content(self, content):
-        self.set_font('Arial', '', 11)
+        self.set_font('Roboto', '', 11)
         self.multi_cell(0, 6, content)
         self.ln(8)
     
@@ -258,8 +338,8 @@ class ProfessionalPDFGenerator(FPDF):
         col_width = (self.WIDTH - 30) / len(headers)
         
         # Header styling
-        self.set_font('Arial', 'B', 10)
-        self.set_fill_color(52, 152, 219)
+        self.set_font('Lato', 'B', 10)
+        self.set_fill_color(62, 146, 204)
         self.set_text_color(255, 255, 255)
         
         for header in headers:
@@ -267,7 +347,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.ln()
         
         # Table data
-        self.set_font('Arial', '', 9)
+        self.set_font('Roboto', '', 9)
         self.set_text_color(0, 0, 0)
         fill = False
         
@@ -286,7 +366,7 @@ class ProfessionalPDFGenerator(FPDF):
     
     def add_image_with_caption(self, image_path, caption, width=None):
         if not os.path.exists(image_path):
-            self.set_font('Arial', 'I', 10)
+            self.set_font('Roboto', 'I', 10)
             self.cell(0, 8, f"[Image not available: {caption}]", 0, 1, 'C')
             self.ln(5)
             return
@@ -301,21 +381,39 @@ class ProfessionalPDFGenerator(FPDF):
             # Save current position
             current_y = self.get_y()
             
-            # Add image
-            self.image(image_path, x=x_pos, w=width)
+            # Add image with proper handling
+            img = Image.open(image_path)
+            
+            # Convert to RGB if necessary
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+            
+            # Save to temporary file in correct format
+            temp_img_path = os.path.join(tempfile.gettempdir(), f"temp_img_{uuid.uuid4()}.jpg")
+            img.save(temp_img_path, 'JPEG', quality=95)
+            
+            # Add image to PDF
+            self.image(temp_img_path, x=x_pos, w=width)
+            
+            # Clean up temporary file
+            try:
+                os.remove(temp_img_path)
+            except:
+                pass
             
             # Draw border around image
             self.set_draw_color(200, 200, 200)
             self.rect(x_pos, current_y, width, self.get_y() - current_y)
             
             # Add caption
-            self.set_font('Arial', 'I', 10)
+            self.set_font('Roboto', 'I', 10)
             self.set_text_color(64, 64, 64)
             self.cell(0, 8, f"Figure: {caption}", 0, 1, 'C')
             self.ln(8)
             self.set_text_color(0, 0, 0)
         except Exception as e:
-            self.set_font('Arial', 'I', 10)
+            print(f"Error adding image: {e}")
+            self.set_font('Roboto', 'I', 10)
             self.cell(0, 8, f"[Image could not be displayed: {caption}]", 0, 1, 'C')
             self.ln(5)
     
@@ -331,12 +429,12 @@ class ProfessionalPDFGenerator(FPDF):
         self.rect(20, self.get_y(), self.WIDTH-40, box_height, 'DF')
         self.ln(5)
         
-        self.set_font('Courier', 'B', 12)
+        self.set_font('RobotoMono', 'B', 12)
         for line in formula_lines:
             self.cell(0, 6, line, 0, 1, 'C')
         
         self.ln(8)
-        self.set_font('Arial', '', 11)
+        self.set_font('Roboto', '', 11)
 
 def save_uploaded_image(uploaded_file, temp_dir):
     """Save uploaded image to temporary directory and return path"""
@@ -346,6 +444,9 @@ def save_uploaded_image(uploaded_file, temp_dir):
     try:
         # Generate unique filename
         file_extension = uploaded_file.name.split('.')[-1].lower()
+        if file_extension not in ['png', 'jpg', 'jpeg']:
+            file_extension = 'jpg'
+            
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
         img_path = os.path.join(temp_dir, unique_filename)
         
@@ -378,23 +479,23 @@ def create_professional_pdf(report_data, temp_dir):
     # Title page
     pdf.add_title_page(report_data)
     
-    # Only include sections that have content
+    # Only include sections that are checked and have content
     sections = []
     
     # Executive Summary
-    if report_data['executive_summary']:
+    if report_data['include_exec_summary'] and report_data['executive_summary']:
         sections.append(("1. EXECUTIVE SUMMARY", report_data['executive_summary'], None, None))
     
     # Problem Definition
-    if report_data['problem_definition']:
+    if report_data['include_problem_def'] and report_data['problem_definition']:
         sections.append(("2. PROBLEM DEFINITION & OBJECTIVES", report_data['problem_definition'], None, None))
     
     # Geometry
-    if report_data['geometry_description']:
+    if report_data['include_geometry'] and report_data['geometry_description']:
         sections.append(("3. GEOMETRY & DOMAIN", report_data['geometry_description'], None, None))
     
     # Mesh Quality
-    if report_data['mesh_details'] or report_data['mesh_quality_data']:
+    if report_data['include_mesh'] and (report_data['mesh_details'] or report_data['mesh_quality_data']):
         mesh_content = report_data['mesh_details']
         if report_data['mesh_quality_data']:
             mesh_content += "\n\n" if mesh_content else ""
@@ -402,7 +503,7 @@ def create_professional_pdf(report_data, temp_dir):
         sections.append(("4. MESH GENERATION & QUALITY", mesh_content, "mesh_quality_data", report_data['mesh_quality_data']))
     
     # Boundary Conditions
-    if report_data['boundary_conditions'] or report_data['boundary_conditions_table']:
+    if report_data['include_boundary'] and (report_data['boundary_conditions'] or report_data['boundary_conditions_table']):
         bc_content = report_data['boundary_conditions']
         if report_data['boundary_conditions_table']:
             bc_content += "\n\n" if bc_content else ""
@@ -410,7 +511,7 @@ def create_professional_pdf(report_data, temp_dir):
         sections.append(("5. BOUNDARY CONDITIONS", bc_content, "boundary_conditions_table", report_data['boundary_conditions_table']))
     
     # Methodology
-    if report_data['methodology'] or report_data['solution_parameters']:
+    if report_data['include_methodology'] and (report_data['methodology'] or report_data['solution_parameters']):
         method_content = report_data['methodology']
         if report_data['solution_parameters']:
             method_content += "\n\n" if method_content else ""
@@ -418,23 +519,23 @@ def create_professional_pdf(report_data, temp_dir):
         sections.append(("6. METHODOLOGY & SOLUTION SETUP", method_content, "solution_parameters", report_data['solution_parameters']))
     
     # Results
-    if report_data['results'] or report_data['result_images']:
+    if report_data['include_results'] and (report_data['results'] or report_data['result_images']):
         sections.append(("7. RESULTS & DISCUSSION", report_data['results'], "result_images", report_data['result_images']))
     
     # Convergence Analysis
-    if report_data['convergence_analysis'] or report_data['convergence_images']:
+    if report_data['include_convergence'] and (report_data['convergence_analysis'] or report_data['convergence_images']):
         sections.append(("8. CONVERGENCE ANALYSIS", report_data['convergence_analysis'], "convergence_images", report_data['convergence_images']))
     
     # Validation
-    if report_data['validation']:
+    if report_data['include_validation'] and report_data['validation']:
         sections.append(("9. VALIDATION & VERIFICATION", report_data['validation'], None, None))
     
     # Formulas
-    if any(formula['description'] and formula['formula'] for formula in report_data['formulas']):
+    if report_data['include_formulas'] and any(formula['description'] and formula['formula'] for formula in report_data['formulas']):
         sections.append(("10. GOVERNING EQUATIONS & FORMULAS", "", "formulas", report_data['formulas']))
     
     # Conclusions
-    if report_data['conclusions']:
+    if report_data['include_conclusions'] and report_data['conclusions']:
         sections.append(("11. CONCLUSIONS & RECOMMENDATIONS", report_data['conclusions'], None, None))
     
     # Only create TOC if there are sections
@@ -444,7 +545,7 @@ def create_professional_pdf(report_data, temp_dir):
         pdf.add_section_header("TABLE OF CONTENTS")
         toc_items = [section[0] for section in sections]
         
-        pdf.set_font('Arial', 'B', 12)
+        pdf.set_font('Lato', 'B', 12)
         for item in toc_items:
             pdf.cell(0, 8, item, 0, 1)
             pdf.ln(4)
@@ -508,6 +609,19 @@ def initialize_session_state():
             'version': "1.0",
             'cfd_software': "ANSYS Fluent",
             'company_logo': None,
+            
+            # Section toggles
+            'include_exec_summary': True,
+            'include_problem_def': True,
+            'include_geometry': True,
+            'include_mesh': True,
+            'include_boundary': True,
+            'include_methodology': True,
+            'include_results': True,
+            'include_convergence': True,
+            'include_validation': True,
+            'include_formulas': True,
+            'include_conclusions': True,
             
             # Report Sections
             'executive_summary': "",
@@ -612,6 +726,56 @@ def main():
         st.progress(progress)
         st.write(f"Completed: {sections_completed}/6 main sections")
         st.markdown('</div>', unsafe_allow_html=True)  # Close sidebar-section
+        
+        # Section selection
+        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+        st.markdown("### 🗂️ Report Sections")
+        
+        st.checkbox("Include Executive Summary", 
+                   value=st.session_state.report_data['include_exec_summary'],
+                   key="include_exec_summary")
+        
+        st.checkbox("Include Problem Definition", 
+                   value=st.session_state.report_data['include_problem_def'],
+                   key="include_problem_def")
+        
+        st.checkbox("Include Geometry", 
+                   value=st.session_state.report_data['include_geometry'],
+                   key="include_geometry")
+        
+        st.checkbox("Include Mesh Details", 
+                   value=st.session_state.report_data['include_mesh'],
+                   key="include_mesh")
+        
+        st.checkbox("Include Boundary Conditions", 
+                   value=st.session_state.report_data['include_boundary'],
+                   key="include_boundary")
+        
+        st.checkbox("Include Methodology", 
+                   value=st.session_state.report_data['include_methodology'],
+                   key="include_methodology")
+        
+        st.checkbox("Include Results", 
+                   value=st.session_state.report_data['include_results'],
+                   key="include_results")
+        
+        st.checkbox("Include Convergence", 
+                   value=st.session_state.report_data['include_convergence'],
+                   key="include_convergence")
+        
+        st.checkbox("Include Validation", 
+                   value=st.session_state.report_data['include_validation'],
+                   key="include_validation")
+        
+        st.checkbox("Include Formulas", 
+                   value=st.session_state.report_data['include_formulas'],
+                   key="include_formulas")
+        
+        st.checkbox("Include Conclusions", 
+                   value=st.session_state.report_data['include_conclusions'],
+                   key="include_conclusions")
+        
+        st.markdown('</div>', unsafe_allow_html=True)  # Close sidebar-section
     
     # Main content tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -627,6 +791,7 @@ def main():
         st.markdown('<h2 class="section-header">Report Content</h2>', unsafe_allow_html=True)
         
         # Executive Summary
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Executive Summary")
         st.markdown('<div class="info-box">Provide a concise overview of the analysis objectives, key findings, and recommendations (2-3 paragraphs).</div>', unsafe_allow_html=True)
         st.session_state.report_data['executive_summary'] = st.text_area(
@@ -635,8 +800,10 @@ def main():
             height=200,
             key="exec_summary"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Problem Definition
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Problem Definition & Objectives")
         st.session_state.report_data['problem_definition'] = st.text_area(
             "Describe the engineering problem, analysis objectives, and scope:",
@@ -644,8 +811,10 @@ def main():
             height=200,
             key="problem_def"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Geometry Description
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Geometry & Domain Description")
         st.session_state.report_data['geometry_description'] = st.text_area(
             "Describe the computational domain, geometry simplifications, and key dimensions:",
@@ -653,8 +822,10 @@ def main():
             height=150,
             key="geometry"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Conclusions
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Conclusions & Recommendations")
         st.session_state.report_data['conclusions'] = st.text_area(
             "Summarize key findings, conclusions, and engineering recommendations:",
@@ -662,6 +833,7 @@ def main():
             height=200,
             key="conclusions"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)  # Close tab-content
     
     with tab2:
@@ -669,6 +841,7 @@ def main():
         st.markdown('<h2 class="section-header">Technical Details</h2>', unsafe_allow_html=True)
         
         # Mesh Details
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Mesh Generation & Quality")
         st.session_state.report_data['mesh_details'] = st.text_area(
             "Describe mesh generation strategy, element types, refinement regions, and quality metrics:",
@@ -676,8 +849,10 @@ def main():
             height=150,
             key="mesh_details"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Mesh Quality Table
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Mesh Quality Metrics")
         with st.expander("Add Mesh Quality Data", expanded=False):
             if st.button("➕ Add Mesh Quality Row"):
@@ -698,8 +873,10 @@ def main():
                     if st.button("❌", key=f"del_mesh_{i}"):
                         st.session_state.report_data['mesh_quality_data'].pop(i)
                         st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Boundary Conditions
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Boundary Conditions")
         st.session_state.report_data['boundary_conditions'] = st.text_area(
             "Describe the boundary conditions applied in the simulation:",
@@ -707,8 +884,10 @@ def main():
             height=150,
             key="boundary_conditions"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Boundary Conditions Table
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Boundary Conditions Table")
         with st.expander("Add Boundary Condition Details", expanded=False):
             if st.button("➕ Add Boundary Condition"):
@@ -733,8 +912,10 @@ def main():
                     if st.button("❌", key=f"del_bc_{i}"):
                         st.session_state.report_data['boundary_conditions_table'].pop(i)
                         st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Methodology
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Methodology & Solution Setup")
         st.session_state.report_data['methodology'] = st.text_area(
             "Describe solver settings, turbulence models, discretization schemes, and solution methods:",
@@ -742,8 +923,10 @@ def main():
             height=200,
             key="methodology"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Solution Parameters
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Solution Parameters")
         with st.expander("Add Solution Parameters", expanded=False):
             if st.button("➕ Add Parameter"):
@@ -762,6 +945,7 @@ def main():
                     if st.button("❌", key=f"del_sol_{i}"):
                         st.session_state.report_data['solution_parameters'].pop(i)
                         st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)  # Close tab-content
     
     with tab3:
@@ -769,6 +953,7 @@ def main():
         st.markdown('<h2 class="section-header">Results & Analysis</h2>', unsafe_allow_html=True)
         
         # Results Section
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Results & Discussion")
         st.session_state.report_data['results'] = st.text_area(
             "Present and discuss the simulation results, including key findings and physical interpretations:",
@@ -776,8 +961,10 @@ def main():
             height=250,
             key="results"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Result Images
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Result Images")
         with st.expander("Upload Result Images", expanded=True):
             new_result_image = st.file_uploader(
@@ -815,8 +1002,10 @@ def main():
                             st.session_state.report_data['result_images'].pop(i)
                             st.rerun()
                     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Convergence Analysis
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Convergence Analysis")
         st.session_state.report_data['convergence_analysis'] = st.text_area(
             "Discuss convergence criteria, residuals behavior, and solution stability:",
@@ -824,8 +1013,10 @@ def main():
             height=150,
             key="convergence_analysis"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Convergence Images
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Convergence Plot Images")
         with st.expander("Upload Convergence Plots", expanded=False):
             new_conv_image = st.file_uploader(
@@ -863,8 +1054,10 @@ def main():
                             st.session_state.report_data['convergence_images'].pop(i)
                             st.rerun()
                     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Governing Equations
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Governing Equations & Formulas")
         st.markdown('<div class="info-box">Add the key mathematical formulas and governing equations used in the analysis.</div>', unsafe_allow_html=True)
         
@@ -902,12 +1095,14 @@ def main():
         if st.button("➕ Add Another Formula"):
             st.session_state.report_data['formulas'].append({'description': '', 'formula': ''})
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)  # Close tab-content
     
     with tab4:
         st.markdown('<div class="tab-content">', unsafe_allow_html=True)
         st.markdown('<h2 class="section-header">Validation & Verification</h2>', unsafe_allow_html=True)
         
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Validation & Verification")
         st.markdown('<div class="info-box">Describe validation against experimental data, analytical solutions, or literature comparisons. Include verification studies such as mesh independence and time step sensitivity.</div>', unsafe_allow_html=True)
         
@@ -917,8 +1112,10 @@ def main():
             height=250,
             key="validation"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         # Validation metrics
+        st.markdown('<div class="section-toggle">', unsafe_allow_html=True)
         st.markdown("#### Key Validation Metrics")
         
         col1, col2, col3 = st.columns(3)
@@ -939,6 +1136,7 @@ def main():
             st.markdown("<h4>Mass Balance</h4>", unsafe_allow_html=True)
             st.metric("", "Satisfied", "< 0.1% error")
             st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)  # Close tab-content
     
     with tab5:
@@ -949,6 +1147,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
+            st.markdown('<div class="report-summary">', unsafe_allow_html=True)
             st.markdown("#### Report Summary")
             st.info(f"""
             **Title:** {st.session_state.report_data['title']}
@@ -957,8 +1156,10 @@ def main():
             **Company:** {st.session_state.report_data['company']}
             **Date:** {st.session_state.report_data['date']}
             """)
+            st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
+            st.markdown('<div class="report-summary">', unsafe_allow_html=True)
             st.markdown("#### Content Statistics")
             stats = {
                 "Result Images": len(st.session_state.report_data['result_images']),
@@ -971,6 +1172,7 @@ def main():
             
             for key, value in stats.items():
                 st.metric(key, value)
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # Validation checks
         st.markdown("#### Pre-Generation Checklist")
