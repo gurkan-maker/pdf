@@ -212,15 +212,8 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_creator("Professional CFD Analysis Tool")
         self.set_title("CFD Analysis Report")
         
-        # Add Unicode fonts (use built-in fonts to avoid missing file issues)
-        self.add_font('Lato', 'B', fname='', uni=True)  # Use built-in
-        self.add_font('Lato', '', fname='', uni=True)   # Use built-in
-        self.add_font('Roboto', '', fname='', uni=True) # Use built-in
-        self.add_font('Roboto', 'B', fname='', uni=True) # Use built-in
-        self.add_font('RobotoMono', '', fname='', uni=True) # Use built-in
-        
-        # Set default font to Roboto
-        self.set_font('Roboto', '', 12)
+        # Use standard fonts that come with FPDF
+        self.set_font('Arial', '', 12)  # Default font
     
     def sanitize_text(self, text):
         """Ensure text is compatible with PDF generation"""
@@ -266,8 +259,8 @@ class ProfessionalPDFGenerator(FPDF):
             except Exception as e:
                 print(f"Error loading logo: {e}")
         
-        # Use Lato for headers
-        self.set_font('Lato', 'B', 20)
+        # Use Arial for headers (since we don't have Lato)
+        self.set_font('Arial', 'B', 20)
         self.set_text_color(10, 36, 99)
         self.cell(0, 15, self.sanitize_text('COMPUTATIONAL FLUID DYNAMICS'), 0, 1, 'C')
         self.cell(0, 10, self.sanitize_text('ANALYSIS REPORT'), 0, 1, 'C')
@@ -280,7 +273,7 @@ class ProfessionalPDFGenerator(FPDF):
     
     def footer(self):
         self.set_y(-15)
-        self.set_font('Roboto', '', 8)  # Changed from 'I' to regular
+        self.set_font('Arial', 'I', 8)
         self.set_text_color(128, 128, 128)
         footer_text = f'Page {self.page_no()} | CFD Analysis Report | Generated on {datetime.datetime.now().strftime("%Y-%m-%d")} | VASTAS Professional CFD Suite'
         self.cell(0, 10, self.sanitize_text(footer_text), 0, 0, 'C')
@@ -295,7 +288,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.rect(50, 40, 110, 110, style='FD')
         
         # Main title
-        self.set_font('Lato', 'B', 24)
+        self.set_font('Arial', 'B', 24)
         self.set_text_color(10, 36, 99)
         self.cell(0, 15, self.sanitize_text(report_data['title']), 0, 1, 'C')
         self.ln(25)
@@ -306,13 +299,13 @@ class ProfessionalPDFGenerator(FPDF):
         self.rect(30, self.get_y(), 150, 80, 'DF')
         self.set_line_width(0.3)
         
-        self.set_font('Lato', 'B', 16)
+        self.set_font('Arial', 'B', 16)
         self.set_text_color(0, 0, 0)
         self.ln(10)
         self.cell(0, 10, self.sanitize_text('REPORT DETAILS'), 0, 1, 'C')
         self.ln(5)
         
-        self.set_font('Roboto', '', 12)
+        self.set_font('Arial', '', 12)
         details = [
             f"Project: {report_data['project_name']}",
             f"Analyst: {report_data['analyst']}",
@@ -328,7 +321,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.ln(35)
         
         # Add confidentiality notice
-        self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
+        self.set_font('Arial', 'I', 10)
         self.set_text_color(128, 128, 128)
         notice_text = (
             "CONFIDENTIAL: This document contains proprietary information and is intended solely for the use of the intended recipient(s). "
@@ -340,14 +333,14 @@ class ProfessionalPDFGenerator(FPDF):
     def add_section_header(self, title, level=1):
         self.ln(12)
         if level == 1:
-            self.set_font('Lato', 'B', 16)
+            self.set_font('Arial', 'B', 16)
             self.set_text_color(62, 146, 204)
             self.set_fill_color(248, 249, 250)
             self.cell(0, 10, self.sanitize_text(title), 0, 1, 'L', 1)
             self.set_draw_color(62, 146, 204)
             self.line(15, self.get_y(), 195, self.get_y())
         else:
-            self.set_font('Lato', 'B', 14)
+            self.set_font('Arial', 'B', 14)
             self.set_text_color(84, 153, 199)
             self.cell(0, 10, self.sanitize_text(title), 0, 1)
         
@@ -355,7 +348,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_text_color(0, 0, 0)
     
     def add_section_content(self, content):
-        self.set_font('Roboto', '', 11)
+        self.set_font('Arial', '', 11)
         safe_content = self.sanitize_text(content)
         self.multi_cell(0, 6, safe_content)
         self.ln(8)
@@ -365,7 +358,7 @@ class ProfessionalPDFGenerator(FPDF):
         col_width = (self.WIDTH - 30) / len(headers)
         
         # Header styling
-        self.set_font('Lato', 'B', 10)
+        self.set_font('Arial', 'B', 10)
         self.set_fill_color(62, 146, 204)
         self.set_text_color(255, 255, 255)
         
@@ -374,7 +367,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.ln()
         
         # Table data
-        self.set_font('Roboto', '', 9)
+        self.set_font('Arial', '', 9)
         self.set_text_color(0, 0, 0)
         
         for i, row in enumerate(data):
@@ -391,7 +384,7 @@ class ProfessionalPDFGenerator(FPDF):
     
     def add_image_with_caption(self, image_path, caption, width=None):
         if not os.path.exists(image_path):
-            self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
+            self.set_font('Arial', 'I', 10)
             self.cell(0, 8, self.sanitize_text(f"[Image not available: {caption}]"), 0, 1, 'C')
             self.ln(5)
             return
@@ -421,14 +414,14 @@ class ProfessionalPDFGenerator(FPDF):
             self.set_draw_color(200, 200, 200)
             self.rect(x_pos, current_y, width, self.get_y() - current_y)
             
-            self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
+            self.set_font('Arial', 'I', 10)
             self.set_text_color(64, 64, 64)
             self.cell(0, 8, self.sanitize_text(f"Figure: {caption}"), 0, 1, 'C')
             self.ln(8)
             self.set_text_color(0, 0, 0)
         except Exception as e:
             print(f"Error adding image: {e}")
-            self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
+            self.set_font('Arial', 'I', 10)
             self.cell(0, 8, self.sanitize_text(f"[Image could not be displayed: {caption}]"), 0, 1, 'C')
             self.ln(5)
     
@@ -443,12 +436,12 @@ class ProfessionalPDFGenerator(FPDF):
         self.rect(20, self.get_y(), self.WIDTH-40, box_height, 'DF')
         self.ln(5)
         
-        self.set_font('RobotoMono', '', 12)  # Changed from 'B' to regular
+        self.set_font('Courier', 'B', 12)  # Use Courier for formulas
         for line in formula_lines:
             self.cell(0, 6, self.sanitize_text(line), 0, 1, 'C')
         
         self.ln(8)
-        self.set_font('Roboto', '', 11)
+        self.set_font('Arial', '', 11)
 
 def save_uploaded_image(uploaded_file, temp_dir):
     """Save uploaded image to temporary directory and return path"""
@@ -559,7 +552,7 @@ def create_professional_pdf(report_data, temp_dir):
         pdf.add_section_header("TABLE OF CONTENTS")
         toc_items = [section[0] for section in sections]
         
-        pdf.set_font('Lato', 'B', 12)
+        pdf.set_font('Arial', 'B', 12)
         for item in toc_items:
             pdf.cell(0, 8, item, 0, 1)
             pdf.ln(4)
