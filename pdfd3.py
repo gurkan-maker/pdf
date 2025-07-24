@@ -17,6 +17,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Add font files (embedded in the code)
+def save_font_files():
+    """Save required font files to temporary directory"""
+    font_files = {
+        'Lato-Bold.ttf': base64.b64decode(
+            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
+        ),
+        'Lato-Regular.ttf': base64.b64decode(
+            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
+        ),
+        'Roboto-Regular.ttf': base64.b64decode(
+            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
+        ),
+        'Roboto-Bold.ttf': base64.b64decode(
+            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
+        ),
+        'RobotoMono-Regular.ttf': base64.b64decode(
+            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
+        )
+    }
+    
+    font_paths = {}
+    temp_dir = tempfile.gettempdir()
+    
+    for font_name, font_data in font_files.items():
+        path = os.path.join(temp_dir, font_name)
+        with open(path, 'wb') as f:
+            f.write(font_data)
+        font_paths[font_name.replace('.ttf', '')] = path
+    
+    return font_paths
+
+# Get font paths (this will create the font files if they don't exist)
+FONT_PATHS = save_font_files()
+
 # Enhanced professional styling with Google Fonts
 st.markdown("""
 <style>
@@ -202,7 +237,7 @@ st.markdown("""
 
 class ProfessionalPDFGenerator(FPDF):
     def __init__(self):
-        super().__init__()
+        super().__init__(orientation='P', unit='mm', format='A4')
         self.set_auto_page_break(auto=True, margin=20)
         self.WIDTH = 210
         self.HEIGHT = 297
@@ -212,11 +247,15 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_creator("Professional CFD Analysis Tool")
         self.set_title("CFD Analysis Report")
         
-        # Add Lato and Roboto fonts
-        self.add_font('Lato', 'B', 'Lato-Bold.ttf', uni=True)
-        self.add_font('Lato', '', 'Lato-Regular.ttf', uni=True)
-        self.add_font('Roboto', '', 'Roboto-Regular.ttf', uni=True)
-        self.add_font('RobotoMono', '', 'RobotoMono-Regular.ttf', uni=True)
+        # Add Unicode fonts using the saved paths
+        self.add_font('Lato', 'B', FONT_PATHS['Lato-Bold'], uni=True)
+        self.add_font('Lato', '', FONT_PATHS['Lato-Regular'], uni=True)
+        self.add_font('Roboto', '', FONT_PATHS['Roboto-Regular'], uni=True)
+        self.add_font('Roboto', 'B', FONT_PATHS['Roboto-Bold'], uni=True)
+        self.add_font('RobotoMono', '', FONT_PATHS['RobotoMono-Regular'], uni=True)
+        
+        # Set default font
+        self.set_font('Roboto', '', 12)
         
     def header(self):
         # Company logo and header
@@ -435,6 +474,17 @@ class ProfessionalPDFGenerator(FPDF):
         
         self.ln(8)
         self.set_font('Roboto', '', 11)
+        
+        def set_safe_font(self, family='Roboto', style='', size=12):
+        """Safely set font with fallback"""
+        try:
+            self.set_font(family, style, size)
+        except RuntimeError as e:
+            if "Undefined font" in str(e):
+                # Fallback to Roboto if specified font fails
+                self.set_font('Roboto', style, size)
+            else:
+                raise
 
 def save_uploaded_image(uploaded_file, temp_dir):
     """Save uploaded image to temporary directory and return path"""
