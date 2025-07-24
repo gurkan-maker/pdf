@@ -17,41 +17,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add font files (embedded in the code)
-def save_font_files():
-    """Save required font files to temporary directory"""
-    font_files = {
-        'Lato-Bold.ttf': base64.b64decode(
-            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
-        ),
-        'Lato-Regular.ttf': base64.b64decode(
-            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
-        ),
-        'Roboto-Regular.ttf': base64.b64decode(
-            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
-        ),
-        'Roboto-Bold.ttf': base64.b64decode(
-            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
-        ),
-        'RobotoMono-Regular.ttf': base64.b64decode(
-            'AAEAAAASAQAABAAgRFNJR5....[truncated full base64 encoded font]....='
-        )
-    }
-    
-    font_paths = {}
-    temp_dir = tempfile.gettempdir()
-    
-    for font_name, font_data in font_files.items():
-        path = os.path.join(temp_dir, font_name)
-        with open(path, 'wb') as f:
-            f.write(font_data)
-        font_paths[font_name.replace('.ttf', '')] = path
-    
-    return font_paths
-
-# Get font paths (this will create the font files if they don't exist)
-FONT_PATHS = save_font_files()
-
 # Enhanced professional styling with Google Fonts
 st.markdown("""
 <style>
@@ -247,28 +212,52 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_creator("Professional CFD Analysis Tool")
         self.set_title("CFD Analysis Report")
         
-        # Add Unicode fonts using the saved paths
-        self.add_font('Lato', 'B', FONT_PATHS['Lato-Bold'], uni=True)
-        self.add_font('Lato', '', FONT_PATHS['Lato-Regular'], uni=True)
-        self.add_font('Roboto', '', FONT_PATHS['Roboto-Regular'], uni=True)
-        self.add_font('Roboto', 'B', FONT_PATHS['Roboto-Bold'], uni=True)
-        self.add_font('RobotoMono', '', FONT_PATHS['RobotoMono-Regular'], uni=True)
+        # Add Unicode fonts (use built-in fonts to avoid missing file issues)
+        self.add_font('Lato', 'B', fname='', uni=True)  # Use built-in
+        self.add_font('Lato', '', fname='', uni=True)   # Use built-in
+        self.add_font('Roboto', '', fname='', uni=True) # Use built-in
+        self.add_font('Roboto', 'B', fname='', uni=True) # Use built-in
+        self.add_font('RobotoMono', '', fname='', uni=True) # Use built-in
         
-        # Set default font
+        # Set default font to Roboto
         self.set_font('Roboto', '', 12)
+    
+    def sanitize_text(self, text):
+        """Ensure text is compatible with PDF generation"""
+        if not text:
+            return ""
         
+        # Replace problematic characters
+        replacements = {
+            'ı': 'i',
+            'ğ': 'g',
+            'ü': 'u',
+            'ş': 's',
+            'ö': 'o',
+            'ç': 'c',
+            'İ': 'I',
+            'Ğ': 'G',
+            'Ü': 'U',
+            'Ş': 'S',
+            'Ö': 'O',
+            'Ç': 'C'
+        }
+        
+        for old, new in replacements.items():
+            text = text.replace(old, new)
+        
+        return text
+    
     def header(self):
         # Company logo and header
         if self.company_logo and os.path.exists(self.company_logo):
             try:
                 img = Image.open(self.company_logo)
-                # Resize logo to maintain aspect ratio with max height of 25mm
                 img_width, img_height = img.size
                 aspect_ratio = img_width / img_height
-                new_height = 25  # 25mm height
+                new_height = 25
                 new_width = new_height * aspect_ratio
                 
-                # Ensure width doesn't exceed 50mm
                 if new_width > 50:
                     new_width = 50
                     new_height = new_width / aspect_ratio
@@ -277,10 +266,11 @@ class ProfessionalPDFGenerator(FPDF):
             except Exception as e:
                 print(f"Error loading logo: {e}")
         
+        # Use Lato for headers
         self.set_font('Lato', 'B', 20)
-        self.set_text_color(10, 36, 99)  # Dark blue
-        self.cell(0, 15, 'COMPUTATIONAL FLUID DYNAMICS', 0, 1, 'C')
-        self.cell(0, 10, 'ANALYSIS REPORT', 0, 1, 'C')
+        self.set_text_color(10, 36, 99)
+        self.cell(0, 15, self.sanitize_text('COMPUTATIONAL FLUID DYNAMICS'), 0, 1, 'C')
+        self.cell(0, 10, self.sanitize_text('ANALYSIS REPORT'), 0, 1, 'C')
         
         # Add decorative line
         self.set_draw_color(62, 146, 204)
@@ -290,9 +280,10 @@ class ProfessionalPDFGenerator(FPDF):
     
     def footer(self):
         self.set_y(-15)
-        self.set_font('Roboto', 'I', 8)
+        self.set_font('Roboto', '', 8)  # Changed from 'I' to regular
         self.set_text_color(128, 128, 128)
-        self.cell(0, 10, f'Page {self.page_no()} | CFD Analysis Report | Generated on {datetime.datetime.now().strftime("%Y-%m-%d")} | VASTAS Professional CFD Suite', 0, 0, 'C')
+        footer_text = f'Page {self.page_no()} | CFD Analysis Report | Generated on {datetime.datetime.now().strftime("%Y-%m-%d")} | VASTAS Professional CFD Suite'
+        self.cell(0, 10, self.sanitize_text(footer_text), 0, 0, 'C')
     
     def add_title_page(self, report_data):
         self.add_page()
@@ -306,7 +297,7 @@ class ProfessionalPDFGenerator(FPDF):
         # Main title
         self.set_font('Lato', 'B', 24)
         self.set_text_color(10, 36, 99)
-        self.cell(0, 15, report_data['title'], 0, 1, 'C')
+        self.cell(0, 15, self.sanitize_text(report_data['title']), 0, 1, 'C')
         self.ln(25)
         
         # Report details box
@@ -318,7 +309,7 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_font('Lato', 'B', 16)
         self.set_text_color(0, 0, 0)
         self.ln(10)
-        self.cell(0, 10, 'REPORT DETAILS', 0, 1, 'C')
+        self.cell(0, 10, self.sanitize_text('REPORT DETAILS'), 0, 1, 'C')
         self.ln(5)
         
         self.set_font('Roboto', '', 12)
@@ -332,48 +323,45 @@ class ProfessionalPDFGenerator(FPDF):
         ]
         
         for detail in details:
-            self.cell(0, 8, detail, 0, 1, 'C')
+            self.cell(0, 8, self.sanitize_text(detail), 0, 1, 'C')
         
         self.ln(35)
         
         # Add confidentiality notice
-        self.set_font('Roboto', 'I', 10)
+        self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
         self.set_text_color(128, 128, 128)
-        self.multi_cell(0, 5, 
+        notice_text = (
             "CONFIDENTIAL: This document contains proprietary information and is intended solely for the use of the intended recipient(s). "
             "Any reproduction or distribution of this document, in whole or in part, without written consent is strictly prohibited. "
-            "© " + str(datetime.datetime.now().year) + " " + report_data['company'] + ". All rights reserved.",
-            0, 'C')
+            "© " + str(datetime.datetime.now().year) + " " + report_data['company'] + ". All rights reserved."
+        )
+        self.multi_cell(0, 5, self.sanitize_text(notice_text), 0, 'C')
     
     def add_section_header(self, title, level=1):
         self.ln(12)
         if level == 1:
             self.set_font('Lato', 'B', 16)
             self.set_text_color(62, 146, 204)
-            # Add background for main section headers
             self.set_fill_color(248, 249, 250)
-            self.cell(0, 10, title, 0, 1, 'L', 1)
-            # Add underline
+            self.cell(0, 10, self.sanitize_text(title), 0, 1, 'L', 1)
             self.set_draw_color(62, 146, 204)
             self.line(15, self.get_y(), 195, self.get_y())
         else:
             self.set_font('Lato', 'B', 14)
             self.set_text_color(84, 153, 199)
-            self.cell(0, 10, title, 0, 1)
+            self.cell(0, 10, self.sanitize_text(title), 0, 1)
         
         self.ln(8)
         self.set_text_color(0, 0, 0)
     
     def add_section_content(self, content):
         self.set_font('Roboto', '', 11)
-        self.multi_cell(0, 6, content)
+        safe_content = self.sanitize_text(content)
+        self.multi_cell(0, 6, safe_content)
         self.ln(8)
     
     def add_table(self, headers, data):
-        # Save current position
         start_y = self.get_y()
-        
-        # Table headers
         col_width = (self.WIDTH - 30) / len(headers)
         
         # Header styling
@@ -382,31 +370,29 @@ class ProfessionalPDFGenerator(FPDF):
         self.set_text_color(255, 255, 255)
         
         for header in headers:
-            self.cell(col_width, 8, header, 1, 0, 'C', 1)
+            self.cell(col_width, 8, self.sanitize_text(header), 1, 0, 'C', 1)
         self.ln()
         
         # Table data
         self.set_font('Roboto', '', 9)
         self.set_text_color(0, 0, 0)
-        fill = False
         
         for i, row in enumerate(data):
-            # Alternate row colors
             if i % 2 == 0:
                 self.set_fill_color(240, 248, 255)
             else:
                 self.set_fill_color(255, 255, 255)
                 
             for item in row:
-                self.cell(col_width, 6, str(item), 1, 0, 'C', fill=True)
+                self.cell(col_width, 6, self.sanitize_text(str(item)), 1, 0, 'C', fill=True)
             self.ln()
         
         self.ln(8)
     
     def add_image_with_caption(self, image_path, caption, width=None):
         if not os.path.exists(image_path):
-            self.set_font('Roboto', 'I', 10)
-            self.cell(0, 8, f"[Image not available: {caption}]", 0, 1, 'C')
+            self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
+            self.cell(0, 8, self.sanitize_text(f"[Image not available: {caption}]"), 0, 1, 'C')
             self.ln(5)
             return
             
@@ -414,52 +400,41 @@ class ProfessionalPDFGenerator(FPDF):
             if width is None:
                 width = self.WIDTH - 40
                 
-            # Calculate position to center the image
             x_pos = (self.WIDTH - width) / 2
-            
-            # Save current position
             current_y = self.get_y()
             
-            # Add image with proper handling
             img = Image.open(image_path)
             
-            # Convert to RGB if necessary
             if img.mode in ('RGBA', 'P'):
                 img = img.convert('RGB')
             
-            # Save to temporary file in correct format
             temp_img_path = os.path.join(tempfile.gettempdir(), f"temp_img_{uuid.uuid4()}.jpg")
             img.save(temp_img_path, 'JPEG', quality=95)
             
-            # Add image to PDF
             self.image(temp_img_path, x=x_pos, w=width)
             
-            # Clean up temporary file
             try:
                 os.remove(temp_img_path)
             except:
                 pass
             
-            # Draw border around image
             self.set_draw_color(200, 200, 200)
             self.rect(x_pos, current_y, width, self.get_y() - current_y)
             
-            # Add caption
-            self.set_font('Roboto', 'I', 10)
+            self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
             self.set_text_color(64, 64, 64)
-            self.cell(0, 8, f"Figure: {caption}", 0, 1, 'C')
+            self.cell(0, 8, self.sanitize_text(f"Figure: {caption}"), 0, 1, 'C')
             self.ln(8)
             self.set_text_color(0, 0, 0)
         except Exception as e:
             print(f"Error adding image: {e}")
-            self.set_font('Roboto', 'I', 10)
-            self.cell(0, 8, f"[Image could not be displayed: {caption}]", 0, 1, 'C')
+            self.set_font('Roboto', '', 10)  # Changed from 'I' to regular
+            self.cell(0, 8, self.sanitize_text(f"[Image could not be displayed: {caption}]"), 0, 1, 'C')
             self.ln(5)
     
     def add_formula_box(self, description, formula):
         self.add_section_header(description, level=2)
         
-        # Formula box
         self.set_fill_color(247, 249, 249)
         self.set_draw_color(200, 210, 220)
         formula_lines = formula.split('\n')
@@ -468,23 +443,12 @@ class ProfessionalPDFGenerator(FPDF):
         self.rect(20, self.get_y(), self.WIDTH-40, box_height, 'DF')
         self.ln(5)
         
-        self.set_font('RobotoMono', 'B', 12)
+        self.set_font('RobotoMono', '', 12)  # Changed from 'B' to regular
         for line in formula_lines:
-            self.cell(0, 6, line, 0, 1, 'C')
+            self.cell(0, 6, self.sanitize_text(line), 0, 1, 'C')
         
         self.ln(8)
         self.set_font('Roboto', '', 11)
-        
-        def set_safe_font(self, family='Roboto', style='', size=12):
-        """Safely set font with fallback"""
-        try:
-            self.set_font(family, style, size)
-        except RuntimeError as e:
-            if "Undefined font" in str(e):
-                # Fallback to Roboto if specified font fails
-                self.set_font('Roboto', style, size)
-            else:
-                raise
 
 def save_uploaded_image(uploaded_file, temp_dir):
     """Save uploaded image to temporary directory and return path"""
